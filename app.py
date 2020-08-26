@@ -28,11 +28,14 @@ shows the latest and greatest data for select areas in Costa Rica._
 @st.cache(persist=True)
 def load_data(plot=True):
 
-	geodata = pd.read_pickle('data/geodata.pkl')
+	geodata = pd.read_pickle('data/geodata.pkl') # remove grecia
+	geodata.drop(geodata[geodata['NAME'].isin(
+			['Grecia', 'Pacuare Matina']
+		)].index, inplace = True) 
 	carbon = pd.read_pickle('data/carbon.pkl')
 	forestcarbon = pd.read_pickle('data/forestcarbon.pkl')
 	defor = pd.read_pickle('data/deforestation.pkl')
-	canopy = pd.read_pickle('data/canopyheight.pkl')
+	canopy = pd.read_pickle('data/canopyheight.pkl')	
 
 	return geodata, carbon, forestcarbon, defor, canopy
 
@@ -237,9 +240,9 @@ c = alt.Chart(forestcarbon_df).mark_bar(
 st.altair_chart(c, use_container_width=True)
 
 defor_df = defor[defor["wdpaid"]==wdpaid]
-total_defor = sum(defor["hectares"]) 
-total_defor_perc = int(10000 * total_defor/(area * 100))
-total_defor_perc = total_defor_perc/100
+total_defor = sum(defor_df["hectares"]) 
+total_defor_perc = np.round(100 * total_defor/(area * 100), 2)
+
 
 st.markdown("""
 
@@ -250,10 +253,14 @@ st.markdown("""
 	Annual tree cover loss between 2000-2019,  detected from NASA satellite
 	imagery at 30-meter resolution.  Defined as a stand-replacement disturbance
 	(achange from a forest to non-forest state).  For **%s**, these numbers
-	suggest that  **%s percent** of the concession was impacted by tree cover
-	loss.
+	suggest that  **%s hectares** (%s percent) were impacted by tree cover loss.
 
-""" %(pa_name, total_defor_perc) )
+""" % (
+		pa_name, 
+		"{:,d}".format(total_defor), 
+		total_defor_perc
+	) 
+)
 
 c = alt.Chart(defor_df).mark_bar(
 		color="#e45756"
@@ -263,7 +270,6 @@ c = alt.Chart(defor_df).mark_bar(
 )
 
 st.altair_chart(c, use_container_width=True)
-
 
 
 # soil_df = soil[soil["block"] == block_name]
@@ -312,77 +318,6 @@ st.altair_chart(c, use_container_width=True)
 
 # st.altair_chart(c, use_container_width=True)
 
-
-# st.markdown("""
-
-# 	----
-
-# 	## Fires
-
-# 	The [Fire Information for Resource Management
-# 	System](https://earthdata.nasa.gov/earth-observation-data/near-real-time/firms)
-# 	(FIRMS) was developed to provide near real-time active fire locations to
-# 	natural resource managers that faced challenges obtaining timely
-# 	satellite-derived fire information.  We report the fires for each day since
-# 	January 1, 2001 above an intensity threshold of 300 Kelvin.  
-
-# """)
-
-# fires_df = fires[fires["block"]==block_name]
-
-# c = alt.Chart(fires_df).mark_bar(
-# 		color="#e45756",
-# 		size=0.6
-# 	).encode(
-# 	    x='date:T',
-# 	    y='fires'
-# )
-
-# st.altair_chart(c, use_container_width=True)
-
-# st.markdown("""
-
-# 	### Fire anomalies
-
-# 	There is clearly a seasonal pattern of fires.  How does this year (in red)
-# 	compare against previous years?  In other words, is the pattern of fires seen
-# 	this year an anomaly?  The x-axis is _day of year_.  If the red line strays
-# 	from the grey area, which represents the 95 percent confidence interval based
-# 	on the previous 11 years, then that day's fire count is considered anomalous.
-# 	 The bottomline for the initial set of concessions is that the fire count is
-# 	down this year, relative to the previous decade.
-
-# """)
-
-# fires_df['year'] = pd.DatetimeIndex(fires_df['date']).year
-# fires_df['day_of_year'] = pd.DatetimeIndex(fires_df['date']).dayofyear
-# fires_df_early = fires_df[fires_df["year"] < 2020]
-# fires_df_late = fires_df[fires_df["year"] == 2020]
-
-# fires_ci = alt.Chart(fires_df_early).mark_errorband(extent='ci').encode(
-# 	    x='day_of_year',
-# 	    y='fires'
-# )
-
-
-# fires_smooth = alt.Chart(fires_df_late).mark_line(
-# 	color='#e45756'
-# ).transform_window(
-# 	rolling_mean='mean(fires)',
-# 	frame=[-10, 10]
-# ).encode(
-# 	x=alt.X(
-# 		'day_of_year',
-# 		axis=alt.Axis(
-# 			title=""
-# 		),
-# 	),
-# 	y=alt.Y(
-# 		'rolling_mean:Q'
-# 	)
-# )
-
-# st.altair_chart(fires_ci + fires_smooth, use_container_width=True)
 
 
 
